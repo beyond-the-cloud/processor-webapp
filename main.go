@@ -8,6 +8,7 @@ import (
 	"os"
 	"processor-webapp/config"
 	"processor-webapp/controller"
+	"processor-webapp/entity"
 	"processor-webapp/tool"
 )
 
@@ -18,6 +19,7 @@ func main() {
 	if err != nil {
 		log.Error(err)
 	}
+	config.DB.AutoMigrate(&entity.Story{})
 
 	Topic := os.Getenv("DBSchema")
 	fmt.Println(Topic)
@@ -25,26 +27,29 @@ func main() {
 	// set up kafka consumer
 
 	// get ids
-	id := 26422799
+	id := 26460390
 
-	// if the story already exists in db
-	story, err := controller.GetStoryByID(id)
-	if err != nil {
-		log.Error(err)
-	}
-	if story != nil {
-		log.Info("The story with id: %v already exists in the database", id)
-	}
+	// if the story doesn't exist in db
+	if !controller.QueryStoryByID(id) {
+		// get data from hankernews
+		var story entity.Story
+		story, err = tool.GetStoryFromHackerNews(id)
+		if err != nil {
+			log.Error(err)
+		} else {
+			log.Infof("Got the story %d information from HackerNews", id)
+		}
 
-	// if the story doesn't exist in db, get data from hankernews
-	story, err = tool.GetStoryFromHackerNews(id)
-	if err != nil {
-		log.Error(err)
-	}
-	// add story into db
-	if err = controller.CreateStory(story); err != nil {
-		log.Error(err)
-	}
+		// add story into db
+		if err = controller.CreateStory(story); err != nil {
+			log.Error(err)
+		} else {
+			log.Infof("Added story %d in db", id)
+		}
 
-	// store story in elastic search
+		// store story in elastic search
+		log.Infof("Added story %d in elastic search", id)
+	} else {
+		log.Infof("Story %d already exists", id)
+	}
 }
