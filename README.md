@@ -7,4 +7,5 @@ export DBHostName=rds
 export DBUserName=username
 export DBPassword=pwd
 export DBSchema=db
+export KafkaServer=localhost
 ```
