@@ -8,4 +8,5 @@ export DBUserName=username
 export DBPassword=pwd
 export DBSchema=db
 export KafkaServer=localhost
+export ESAddr=http://localhost:9200
 ```

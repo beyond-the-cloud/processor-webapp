@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -42,6 +44,14 @@ func main() {
 		log.Error(err)
 	}
 	log.Infof("got max id: %v", maxId)
+
+	// initialize elasticsearch client
+	ESAddr := os.Getenv("ESAddr")
+	es, err := tool.InitElasticSearch(ESAddr)
+	if err != nil {
+		log.Error("error initializing elastic search client: %s", err)
+	}
+	ctx := context.Background()
 
 	// keep receiving messages from kafka
 	for {
@@ -96,10 +106,25 @@ func main() {
 				}
 
 				// store story in elastic search
+				esStory := entity.EsStory{
+					ID:    story.ID,
+					Title: story.Title,
+				}
+				storyJSON, err := json.Marshal(esStory)
+				index, err := es.Index().
+					Index(topic).
+					BodyJson(string(storyJSON)).
+					Do(ctx)
+				if err != nil {
+					log.Error(err)
+				}
+				log.Infof("index: %v", index)
 				log.Infof("added story %d in elastic search", id)
 			} else {
 				log.Infof("story %d already exists", id)
 			}
+		} else {
+			log.Debug("got blank string")
 		}
 	}
 }

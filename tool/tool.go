@@ -3,10 +3,11 @@ package tool
 import (
 	"encoding/json"
 	"fmt"
+	elasticsearch "github.com/olivere/elastic/v7"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"net/http"
 	"processor-webapp/entity"
-	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
 // GetStoryFromHackerNews gets story information from HackerNews
@@ -22,7 +23,6 @@ func GetStoryFromHackerNews(id int) (entity.Story, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&story); err != nil {
 		return entity.Story{}, err
 	}
-	fmt.Println(story)
 	return story, nil
 }
 
@@ -46,7 +46,7 @@ func GetMaxId() (int, error) {
 func InitKafkaConsumer(topic string, server string) (*kafka.Consumer, error) {
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": server,
-		"group.id":          "group",
+		"group.id":          "cg",
 		"auto.offset.reset": "earliest",
 	})
 
@@ -69,4 +69,16 @@ func ConsumeMsg(c *kafka.Consumer) string {
 		log.Errorf("Consumer error: %v (%v)\n", err, msg)
 		return ""
 	}
+}
+
+// InitElasticSearch initializes ElasticSearch Client
+func InitElasticSearch(ESAddr string) (*elasticsearch.Client, error) {
+	esClient, err := elasticsearch.NewClient(elasticsearch.SetURL(ESAddr),
+		elasticsearch.SetSniff(false),
+		elasticsearch.SetHealthcheck(false))
+	if err != nil {
+		return nil, err
+	}
+	log.Infof("initialized elasticsearch %v", elasticsearch.Version)
+	return esClient, nil
 }
