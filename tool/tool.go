@@ -23,7 +23,6 @@ func GetStoryFromHackerNews(id int) (entity.Story, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&story); err != nil {
 		return entity.Story{}, err
 	}
-	fmt.Println(story)
 	return story, nil
 }
 
@@ -47,7 +46,7 @@ func GetMaxId() (int, error) {
 func InitKafkaConsumer(topic string, server string) (*kafka.Consumer, error) {
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": server,
-		"group.id":          "group",
+		"group.id":          "cg",
 		"auto.offset.reset": "earliest",
 	})
 
@@ -62,13 +61,10 @@ func InitKafkaConsumer(topic string, server string) (*kafka.Consumer, error) {
 
 // ConsumeMsg gets messages from kafka
 func ConsumeMsg(c *kafka.Consumer) string {
-	fmt.Println("c1")
 	msg, err := c.ReadMessage(-1)
 	if err == nil {
-		fmt.Println(msg.Value)
 		return string(msg.Value)
 	} else {
-		fmt.Println("c error")
 		// The client will automatically try to recover from all errors.
 		log.Errorf("Consumer error: %v (%v)\n", err, msg)
 		return ""

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -15,11 +14,6 @@ import (
 	"regexp"
 	"strconv"
 )
-
-type esStory struct {
-	id    string `json:"id"`
-	title string `json:"title"`
-}
 
 func main() {
 	// connect to database
@@ -51,7 +45,6 @@ func main() {
 	}
 	log.Infof("got max id: %v", maxId)
 
-	os.Setenv("ESAddr", "http://localhost:9200")
 	// initialize elasticsearch client
 	ESAddr := os.Getenv("ESAddr")
 	es, err := tool.InitElasticSearch(ESAddr)
@@ -62,12 +55,9 @@ func main() {
 
 	// keep receiving messages from kafka
 	for {
-		fmt.Println("3")
 		// get messages from kafka consumer
 		msg := tool.ConsumeMsg(consumer)
-		fmt.Println("4")
 		if msg != "" {
-			fmt.Println("5")
 			log.Infof("consumer got message: %v", msg)
 			// check if id is valid
 			match, err := regexp.MatchString(`^[0-9]*$`, msg)
@@ -116,9 +106,9 @@ func main() {
 				}
 
 				// store story in elastic search
-				esStory := esStory{
-					id:    string(story.ID),
-					title: story.Title,
+				esStory := entity.EsStory{
+					ID:    story.ID,
+					Title: story.Title,
 				}
 				storyJSON, err := json.Marshal(esStory)
 				index, err := es.Index().
@@ -128,7 +118,7 @@ func main() {
 				if err != nil {
 					log.Error(err)
 				}
-				fmt.Println(index)
+				log.Infof("index: %v", index)
 				log.Infof("added story %d in elastic search", id)
 			} else {
 				log.Infof("story %d already exists", id)

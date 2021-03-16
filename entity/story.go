@@ -12,3 +12,9 @@ type Story struct {
 	//Kids        []int  `json:"kids"`
 	//Text        string    `json:"text"`  // The comment, story or poll text. HTML.
 }
+
+// story to store in elastic search
+type EsStory struct {
+	ID    int `json:"id"`
+	Title string `json:"title"`
+}
