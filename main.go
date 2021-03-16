@@ -36,7 +36,7 @@ func main() {
 	} else {
 		log.Info("initializing kafka consumer succeed")
 	}
-	//defer consumer.Close()
+	defer consumer.Close()
 
 	// get the max id
 	maxId, err := tool.GetMaxId()
