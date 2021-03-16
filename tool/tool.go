@@ -3,10 +3,11 @@ package tool
 import (
 	"encoding/json"
 	"fmt"
+	elasticsearch "github.com/olivere/elastic/v7"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"net/http"
 	"processor-webapp/entity"
-	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
 // GetStoryFromHackerNews gets story information from HackerNews
@@ -61,12 +62,27 @@ func InitKafkaConsumer(topic string, server string) (*kafka.Consumer, error) {
 
 // ConsumeMsg gets messages from kafka
 func ConsumeMsg(c *kafka.Consumer) string {
+	fmt.Println("c1")
 	msg, err := c.ReadMessage(-1)
 	if err == nil {
+		fmt.Println(msg.Value)
 		return string(msg.Value)
 	} else {
+		fmt.Println("c error")
 		// The client will automatically try to recover from all errors.
 		log.Errorf("Consumer error: %v (%v)\n", err, msg)
 		return ""
 	}
+}
+
+// InitElasticSearch initializes ElasticSearch Client
+func InitElasticSearch(ESAddr string) (*elasticsearch.Client, error) {
+	esClient, err := elasticsearch.NewClient(elasticsearch.SetURL(ESAddr),
+		elasticsearch.SetSniff(false),
+		elasticsearch.SetHealthcheck(false))
+	if err != nil {
+		return nil, err
+	}
+	log.Infof("initialized elasticsearch %v", elasticsearch.Version)
+	return esClient, nil
 }
