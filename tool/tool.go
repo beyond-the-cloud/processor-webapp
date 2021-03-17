@@ -3,10 +3,12 @@ package tool
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	elasticsearch "github.com/olivere/elastic/v7"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"net/http"
+	"processor-webapp/controller"
 	"processor-webapp/entity"
 )
 
@@ -81,4 +83,19 @@ func InitElasticSearch(ESAddr string) (*elasticsearch.Client, error) {
 	}
 	log.Infof("initialized elasticsearch %v", elasticsearch.Version)
 	return esClient, nil
+}
+
+// InitRouter initializes router and provides Liveness and Readiness Test
+func InitRouter() *gin.Engine {
+	r := gin.Default()
+
+	// tests if the processor-webapp runs normally
+	r.GET("/hello", func(c *gin.Context) {
+		c.String(http.StatusOK, "hello world")
+	})
+
+	// tests if the processor-webapp connects to database normally
+	r.GET("/story", controller.QueryStoryByIDRouter)
+
+	return r
 }

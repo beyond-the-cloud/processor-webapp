@@ -15,6 +15,6 @@ type Story struct {
 
 // story to store in elastic search
 type EsStory struct {
-	ID    int `json:"id"`
+	ID    int    `json:"id"`
 	Title string `json:"title"`
 }
