@@ -1,9 +1,40 @@
 package controller
 
 import (
+	"errors"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+	"math/rand"
+	"net/http"
 	"processor-webapp/entity"
 	"processor-webapp/model"
 )
+
+// GetAllStories ... Get all stories
+func GetAllStories(c *gin.Context) {
+	var stories []entity.Story
+	err := model.GetAllStories(stories)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	for _, story := range stories {
+		c.JSON(http.StatusOK, gin.H{
+			"id":          story.ID,
+			"by":          story.Author,
+			"descendants": story.Descendants,
+			"score":       story.Score,
+			"time":        story.CreateDate,
+			"title":       story.Title,
+			"type":        story.Type,
+			"url":         story.URL,
+		})
+	}
+}
 
 // GetStories ... Get all stories
 func GetStories() ([]entity.Story, error) {
@@ -22,6 +53,26 @@ func CreateStory(story entity.Story) error {
 		return err
 	}
 	return nil
+}
+
+// QueryStoryByIDGin ... Checks connection to database
+func QueryStoryByIDRouter(c *gin.Context) {
+	// randomly get an id in the range of (10000, 26497625]
+	min := 100000
+	max := 26497625
+	id := rand.Intn(max-min)+min
+	var story entity.Story
+	err := model.GetStoryByID(story, id)
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": err.Error(),
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"msg": "ready",
+		})
+	}
 }
 
 // QueryStoryByID ... Query the story by id

@@ -25,6 +25,9 @@ func main() {
 	}
 	config.DB.AutoMigrate(&entity.Story{})
 
+	// run router to provide liveness and readiness test
+	go tool.InitRouter().Run()
+
 	// initialize kafka consumer
 	topic := os.Getenv("DBSchema")
 	log.Infof("topic: %v", topic)
