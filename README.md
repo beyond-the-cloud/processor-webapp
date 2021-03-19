@@ -33,6 +33,4 @@ export ESAddr=http://localhost:9200
         -e KafkaServer=kafka \
         -e ESAddr=hostname:port \
         processor-webapp:1.0
-    ```
-
-    
+    ```  
