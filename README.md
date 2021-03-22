@@ -10,7 +10,6 @@ export DBSchema=db
 export KafkaServer=localhost
 export ESAddr=http://localhost:9200
 ```
-
 ## processor-webapp with Docker
 
 1. Build the image
