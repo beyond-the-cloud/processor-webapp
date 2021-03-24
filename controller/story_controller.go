@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"math/rand"
 	"net/http"
@@ -68,10 +69,12 @@ func QueryStoryByIDRouter(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": err.Error(),
 		})
+		log.Errorf("visiting /story got error: %v", err)
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"msg": "ready",
 		})
+		log.Info("visiting /story succeed")
 	}
 }
 

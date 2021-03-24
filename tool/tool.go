@@ -92,6 +92,7 @@ func InitRouter() *gin.Engine {
 	// tests if the processor-webapp runs normally
 	r.GET("/hello", func(c *gin.Context) {
 		c.String(http.StatusOK, "hello world")
+		log.Info("visiting /hello succeed")
 	})
 
 	// tests if the processor-webapp connects to database normally

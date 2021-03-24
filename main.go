@@ -46,7 +46,7 @@ func main() {
 	if err != nil {
 		log.Error(err)
 	}
-	log.Infof("got max id: %v", maxId)
+	log.Infof("got max id: %v from HackerNews", maxId)
 
 	// initialize elasticsearch client
 	ESAddr := os.Getenv("ESAddr")
@@ -61,7 +61,7 @@ func main() {
 		// get messages from kafka consumer
 		msg := tool.ConsumeMsg(consumer)
 		if msg != "" {
-			log.Infof("consumer got message: %v", msg)
+			log.Infof("kafka consumer got message: %v from topic: %v", msg, topic)
 			// check if id is valid
 			match, err := regexp.MatchString(`^[0-9]*$`, msg)
 			if err != nil {
