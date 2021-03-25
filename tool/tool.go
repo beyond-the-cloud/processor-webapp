@@ -1,15 +1,19 @@
 package tool
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	elasticsearch "github.com/olivere/elastic/v7"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"net/http"
 	"processor-webapp/controller"
 	"processor-webapp/entity"
+	"processor-webapp/prom"
+	"time"
 )
 
 // GetStoryFromHackerNews gets story information from HackerNews
@@ -20,6 +24,8 @@ func GetStoryFromHackerNews(id int) (entity.Story, error) {
 		return entity.Story{}, err
 	}
 	defer resp.Body.Close()
+
+	prom.HackerCounter.Inc()
 
 	var story entity.Story
 	if err := json.NewDecoder(resp.Body).Decode(&story); err != nil {
@@ -35,6 +41,8 @@ func GetMaxId() (int, error) {
 		return 0, err
 	}
 	defer resp.Body.Close()
+
+	prom.HackerCounter.Inc()
 
 	var id int
 	if err := json.NewDecoder(resp.Body).Decode(&id); err != nil {
@@ -63,6 +71,9 @@ func InitKafkaConsumer(topic string, server string) (*kafka.Consumer, error) {
 
 // ConsumeMsg gets messages from kafka
 func ConsumeMsg(c *kafka.Consumer) string {
+	defer func(begun time.Time) {
+		prom.ConsumeKafkaDuration.Observe(time.Since(begun).Seconds())
+	}(time.Now())
 	msg, err := c.ReadMessage(-1)
 	if err == nil {
 		return string(msg.Value)
@@ -93,10 +104,40 @@ func InitRouter() *gin.Engine {
 	r.GET("/hello", func(c *gin.Context) {
 		c.String(http.StatusOK, "hello world")
 		log.Info("visiting /hello succeed")
+		prom.HelloCounter.Inc()
 	})
 
 	// tests if the processor-webapp connects to database normally
 	r.GET("/story", controller.QueryStoryByIDRouter)
 
 	return r
+}
+
+// StartPromClient initializes Prometheus Client
+func StartPromClient() {
+	log.Info("initializing prometheus client")
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(":2112", nil)
+}
+
+// AddStoryInES adds story in ElasticSearch
+func AddStoryInES(story entity.Story, es *elasticsearch.Client, topic string, ctx context.Context) (*elasticsearch.IndexResponse, error) {
+	esStory := entity.EsStory{
+		ID:    story.ID,
+		Title: story.Title,
+	}
+	storyJSON, err := json.Marshal(esStory)
+
+	defer func(begun time.Time) {
+		prom.ElasticSearchDuration.Observe(time.Since(begun).Seconds())
+	}(time.Now())
+
+	index, err := es.Index().
+		Index(topic).
+		BodyJson(string(storyJSON)).
+		Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return index, nil
 }

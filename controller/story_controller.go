@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"processor-webapp/entity"
 	"processor-webapp/model"
+	"processor-webapp/prom"
+	"time"
 )
 
 // GetAllStories ... Get all stories
@@ -49,7 +51,11 @@ func GetStories() ([]entity.Story, error) {
 
 // CreateStory ... Create Story
 func CreateStory(story entity.Story) error {
-	err := model.CreateStory(story)
+	var err error
+	defer func(begun time.Time) {
+		prom.CreateStoryDuration.Observe(time.Since(begun).Seconds())
+	}(time.Now())
+	err = model.CreateStory(story)
 	if err != nil {
 		return err
 	}
@@ -58,13 +64,21 @@ func CreateStory(story entity.Story) error {
 
 // QueryStoryByIDGin ... Checks connection to database
 func QueryStoryByIDRouter(c *gin.Context) {
+	prom.StoryCounter.Inc()
+
 	// randomly get an id in the range of (10000, 26497625]
 	min := 100000
 	max := 26497625
-	id := rand.Intn(max-min)+min
-	var story entity.Story
-	err := model.GetStoryByID(story, id)
+	id := rand.Intn(max-min) + min
 
+	var story entity.Story
+	var err error
+
+	defer func(begun time.Time) {
+		prom.GetStoryDuration.Observe(time.Since(begun).Seconds())
+	}(time.Now())
+
+	err = model.GetStoryByID(story, id)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": err.Error(),
@@ -80,7 +94,12 @@ func QueryStoryByIDRouter(c *gin.Context) {
 
 // QueryStoryByID ... Query the story by id
 func QueryStoryByID(id int) bool {
-	return model.QueryStoryByID(id)
+	var exist bool
+	defer func(begun time.Time) {
+		prom.QueryStoryDuration.Observe(time.Since(begun).Seconds())
+	}(time.Now())
+	exist = model.QueryStoryByID(id)
+	return exist
 }
 
 // GetStoryByID ... Get the story by id

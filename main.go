@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -10,6 +10,7 @@ import (
 	"processor-webapp/config"
 	"processor-webapp/controller"
 	"processor-webapp/entity"
+	"processor-webapp/prom"
 	"processor-webapp/tool"
 	"regexp"
 	"strconv"
@@ -24,6 +25,15 @@ func main() {
 		log.Error(err)
 	}
 	config.DB.AutoMigrate(&entity.Story{})
+
+	// init prom client
+	go tool.StartPromClient()
+
+	// register metrics
+	prometheus.MustRegister(prom.HelloCounter)
+	prometheus.MustRegister(prom.StoryCounter)
+	prometheus.MustRegister(prom.GetStoryDuration)
+	prometheus.MustRegister(prom.HackerCounter)
 
 	// run router to provide liveness and readiness test
 	go tool.InitRouter().Run()
@@ -109,20 +119,13 @@ func main() {
 				}
 
 				// store story in elastic search
-				esStory := entity.EsStory{
-					ID:    story.ID,
-					Title: story.Title,
-				}
-				storyJSON, err := json.Marshal(esStory)
-				index, err := es.Index().
-					Index(topic).
-					BodyJson(string(storyJSON)).
-					Do(ctx)
+				index, err := tool.AddStoryInES(story, es, topic, ctx)
 				if err != nil {
 					log.Error(err)
+				} else {
+					log.Infof("index: %v", index)
+					log.Infof("added story %d in elastic search", id)
 				}
-				log.Infof("index: %v", index)
-				log.Infof("added story %d in elastic search", id)
 			} else {
 				log.Infof("story %d already exists", id)
 			}
