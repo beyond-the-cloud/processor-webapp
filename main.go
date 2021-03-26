@@ -17,6 +17,10 @@ import (
 )
 
 func main() {
+	// set log output to stdout
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.InfoLevel)
+
 	// connect to database
 	dsn := config.DbURL(config.BuildDBConfig())
 	var err error
