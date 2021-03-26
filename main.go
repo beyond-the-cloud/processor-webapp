@@ -30,17 +30,18 @@ func main() {
 	}
 	config.DB.AutoMigrate(&entity.Story{})
 
-	// init prom client
-	go tool.StartPromClient()
-
 	// register metrics
 	prometheus.MustRegister(prom.HelloCounter)
 	prometheus.MustRegister(prom.StoryCounter)
 	prometheus.MustRegister(prom.GetStoryDuration)
 	prometheus.MustRegister(prom.HackerCounter)
+	prometheus.MustRegister(prom.QueryStoryDuration)
+	prometheus.MustRegister(prom.CreateStoryDuration)
+	prometheus.MustRegister(prom.ConsumeKafkaDuration)
+	prometheus.MustRegister(prom.ElasticSearchDuration)
 
 	// run router to provide liveness and readiness test
-	go tool.InitRouter().Run()
+	go tool.InitRouter()
 
 	// initialize kafka consumer
 	topic := os.Getenv("DBSchema")
