@@ -9,6 +9,7 @@ require (
 	github.com/prometheus/client_golang v1.10.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.6.1 // indirect
+	github.com/zsais/go-gin-prometheus v0.1.0
 	gopkg.in/confluentinc/confluent-kafka-go.v1 v1.6.1
 	gorm.io/driver/mysql v1.0.5
 	gorm.io/gorm v1.21.3

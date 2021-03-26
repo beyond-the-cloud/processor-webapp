@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	elasticsearch "github.com/olivere/elastic/v7"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
+	ginprometheus "github.com/zsais/go-gin-prometheus"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"net/http"
 	"processor-webapp/controller"
@@ -97,8 +97,11 @@ func InitElasticSearch(ESAddr string) (*elasticsearch.Client, error) {
 }
 
 // InitRouter initializes router and provides Liveness and Readiness Test
-func InitRouter() *gin.Engine {
-	r := gin.Default()
+func InitRouter() {
+	r := gin.New()
+
+	p := ginprometheus.NewPrometheus("gin")
+	p.Use(r)
 
 	// tests if the processor-webapp runs normally
 	r.GET("/hello", func(c *gin.Context) {
@@ -110,14 +113,7 @@ func InitRouter() *gin.Engine {
 	// tests if the processor-webapp connects to database normally
 	r.GET("/story", controller.QueryStoryByIDRouter)
 
-	return r
-}
-
-// StartPromClient initializes Prometheus Client
-func StartPromClient() {
-	log.Info("initializing prometheus client")
-	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(":2112", nil)
+	r.Run()
 }
 
 // AddStoryInES adds story in ElasticSearch
