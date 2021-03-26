@@ -1,7 +1,6 @@
 # processor-webapp
 Processor Web App GitHub Repository Setup
 
-Test locally:
 ```.env
 export DBHostName=localhost
 export DBUserName=root
