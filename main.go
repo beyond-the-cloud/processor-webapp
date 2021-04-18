@@ -29,7 +29,7 @@ func main() {
 	config.DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
 	// if meet errors connecting to db, retry 3 times
-	count := 3
+	count := 20
 	for err != nil && count>0 {
 		log.Debugf("got %v retrying connecting %v times to db", err, count)
 		time.Sleep(3000 * time.Millisecond)
@@ -47,25 +47,30 @@ func main() {
 	// get all tables
 	tables := []string{}
 	config.DB.Select(&tables, "SHOW TABLES")
-	log.Info(tables)
+	log.Infof("got %v tables: %v", len(tables), tables)
 
 	// check if table stories exists
 	isExist := false
-	for _, table := range tables {
-		if strings.Compare(table, "stories") == 0 {
-			isExist = true
-			break
+	if len(tables) != 0 {
+		for i, table := range tables {
+			log.Infof("table %v: %v", i, table)
+			if strings.Compare(table, "stories") == 0 {
+				isExist = true
+				log.Infof("table stories exists")
+				break
+			}
 		}
 	}
+	log.Infof("table stories exists: %v", isExist)
 
 	// create table stories if not exist
 	if len(tables) == 0 || !isExist {
 		config.DB.Exec("CREATE TABLE `stories` (\n  `id` bigint(20) NOT NULL AUTO_INCREMENT,\n  `author` longtext,\n  `descendants` bigint(20) DEFAULT NULL,\n  `score` bigint(20) DEFAULT NULL,\n  `create_date` bigint(20) DEFAULT NULL,\n  `title` longtext,\n  `type` longtext,\n  `url` longtext,\n  PRIMARY KEY (`id`)\n) ENGINE=InnoDB AUTO_INCREMENT=26469754 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;")
 		log.Info("creating stories table failed, created stories table manually")
-		// check table again
+		// check tables again
 		tables = []string{}
 		config.DB.Select(&tables, "SHOW TABLES")
-		log.Info(tables)
+		log.Infof("got %v tables: %v", len(tables), tables)
 	}
 
 	// register metrics
