@@ -21,7 +21,14 @@ import (
 func main() {
 	// set log output to stdout
 	log.SetOutput(os.Stdout)
-	log.SetLevel(log.InfoLevel)
+	log.SetLevel(log.DebugLevel)
+
+	// show env vars
+	log.Infof("DBHostName: %v", os.Getenv("DBHostName"))
+	log.Infof("DBUserName: %v", os.Getenv("DBUserName"))
+	log.Infof("DBSchema: %v", os.Getenv("DBSchema"))
+	log.Infof("KafkaServer: %v", os.Getenv("KafkaServer"))
+	log.Infof("ESAddr: %v", os.Getenv("ESAddr"))
 
 	// connect to database
 	dsn := config.DbURL(config.BuildDBConfig())
